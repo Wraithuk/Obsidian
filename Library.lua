@@ -539,30 +539,30 @@ local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
 end
 
 local function New(ClassName: string, Properties: { [string]: any }): any
-    local Instance = Instance.new(ClassName)
+    local instance = Instance.new(ClassName)
 
     if Templates[ClassName] then
-        FillInstance(Templates[ClassName], Instance)
+        FillInstance(Templates[ClassName], instance)
     end
-    FillInstance(Properties, Instance)
+    FillInstance(Properties, instance)
 
     if Properties["Parent"] and not Properties["ZIndex"] then
         pcall(function()
-            Instance.ZIndex = Properties.Parent.ZIndex
+            instance.ZIndex = Properties.Parent.ZIndex
         end)
     end
 
-    return Instance
+    return instance
 end
 
---// Main Instances \\-
+--// Main Instances
 local function ParentUI(UI: Instance)
-    pcall(protectgui, UI);
+    pcall(protectgui, UI)
 
     if not pcall(function()
             UI.Parent = gethui()
         end) then
-        UI.Parent = Library.LocalPlayer:WaitForChild("PlayerGui", math.huge)
+        UI.Parent = LocalPlayer:WaitForChild("PlayerGui", math.huge)
     end
 end
 
@@ -572,10 +572,15 @@ local ScreenGui = New("ScreenGui", {
     ResetOnSpawn = false,
 })
 ParentUI(ScreenGui)
-Library.ScreenGui = ScreenGui
-ScreenGui.DescendantRemoving:Connect(function(Instance)
-    Library:RemoveFromRegistry(Instance)
-    Library.DPIRegistry[Instance] = nil
+CustomLib.ScreenGui = ScreenGui
+
+ScreenGui.DescendantRemoving:Connect(function(instance)
+    if CustomLib.RemoveFromRegistry then
+        CustomLib:RemoveFromRegistry(instance)
+    end
+    if CustomLib.DPIRegistry then
+        CustomLib.DPIRegistry[instance] = nil
+    end
 end)
 
 local ModalElement = New("TextButton", {
