@@ -17,6 +17,7 @@ local Teams = CustomLib.GetService("Teams")
 local TweenService = CustomLib.GetService("TweenService")
 
 --// Variables
+local genv = getgenv()
 local isStudio = RunService:IsStudio()
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -1235,7 +1236,7 @@ function Library:Unload()
 
     Library.Unloaded = true
     ScreenGui:Destroy()
-    getgenv().Library = nil
+    genv.Library = nil
 end
 
 local CheckIcon = Library:GetIcon("check")
@@ -5260,5 +5261,5 @@ Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange))
 Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
 Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
-getgenv().Library = Library
+genv.Library = Library
 return Library
