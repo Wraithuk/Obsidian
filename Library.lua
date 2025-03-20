@@ -1,39 +1,210 @@
-local CustomLib = {
-	Options = {},
-	Folder = "CustomLib",
-	GetService = function(service)
-		return cloneref and cloneref(game:GetService(service)) or game:GetService(service)
-	end,
-}
 
---// Services
-local CoreGui = CustomLib.GetService("CoreGui")
-local Players = CustomLib.GetService("Players")
-local RunService = CustomLib.GetService("RunService")
-local SoundService = CustomLib.GetService("SoundService")
-local UserInputService = CustomLib.GetService("UserInputService")
-local TextService = CustomLib.GetService("TextService")
-local Teams = CustomLib.GetService("Teams")
-local TweenService = CustomLib.GetService("TweenService")
+if not LPH_OBFUSCATED then
+	LPH_NO_VIRTUALIZE = function(...)
+		return (...)
+	end
+	LPH_NO_UPVALUES = function(...)
+		return (...)
+	end
+end
 
---// Variables
+
+local Workspace = game:GetService("Workspace")
+local PlayerGui = game:GetService("Players").LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 local genv = getgenv()
-local isStudio = RunService:IsStudio()
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
-local cloneref = (cloneref or clonereference or function(instance: any)
-    return instance
-end)
+genv.AstLoaded = false
+
+local loading = tick()
+
+local SharedRequires = {}
+setmetatable(SharedRequires, {
+	__metatable = "Secure",
+	__index = function(t, k)
+		return rawget(t, k)
+	end,
+})
+
+SharedRequires["Services"] = {}
+
+SharedRequires["Services"]["Table"] = {}
+
+SharedRequires["Services"].DumpServices = function()
+	for _, service in pairs(game:GetChildren()) do
+		table.insert(SharedRequires["Services"]["Table"], service)
+	end
+end
+
+SharedRequires["Services"].GetService = function(name)
+	for _, v in pairs(SharedRequires["Services"].Table) do
+		if rawequal(name, v.ClassName) then
+			return v
+		end
+	end
+end
+
+SharedRequires["Maid"] = {}
+
+SharedRequires["Maid"].Cleanup = function()
+	for i, v in genv.Connections do
+		v:Disconnect()
+	end
+
+	SharedRequires = {}
+	genv.Drawings = {}
+	genv.Remotes = {}
+	genv.Settings = {}
+	genv.Hooks = {}
+	genv.Connections = {}
+	genv.States = {}
+	genv.NpcList = {}
+	genv.Moblist = {}
+end
+
+SharedRequires["Maid"].Setup = function()
+	genv.NpcList = {}
+	genv.Remotes = {}
+	genv.Settings = {
+		Autoparry = { Toggle = false, Delay = 0 },
+		NoFallDamage = true,
+		ESP = { Name = true, NameColor = Color3.fromRGB(255, 255, 255) },
+		NoFog = true,
+	}
+
+	genv.Hooks = {}
+	genv.States = { Tweening = false }
+	genv.Connections = {}
+	setmetatable(genv.Settings, {
+		__metatable = "Locked",
+		__index = function(t, k)
+			return rawget(t, k)
+		end,
+	})
+
+	setmetatable(genv.Hooks, {
+		__metatable = "Locked",
+		__index = function(t, k)
+			return rawget(t, k)
+		end,
+	})
+
+	setmetatable(genv.States, {
+		__metatable = "Locked",
+		__index = function(t, k)
+			return rawget(t, k)
+		end,
+	})
+	setmetatable(genv.Connections, {
+		__metatable = "Locked",
+		__index = function(t, k)
+			return rawget(t, k)
+		end,
+	})
+end
+
+SharedRequires["Env"] = {}
+
+SharedRequires["Env"].Pcall = function(func, ...)
+	local c = clonefunction(pcall)
+	return c
+end
+
+SharedRequires["Env"].loadstr = function(link)
+	local ref = clonefunction(loadstring)
+	return ref(game:HttpGet(link))()
+end
+
+SharedRequires["Env"].croutinelib = function()
+	local lib = {}
+	setmetatable(lib, {
+		__metatable = "Locked",
+		__index = function(t, k)
+			return rawget(t, k)
+		end,
+		__newindex = function(t, k, v)
+			return rawset(t, k, v)
+		end,
+	})
+
+	for i, v in pairs(coroutine) do
+		if type(v) == "function" then
+			local c = clonefunction(v)
+			rawset(lib, i, c)
+		end
+	end
+	return lib
+end
+
+SharedRequires["Env"].getnamecallmethod = function()
+	local c = clonefunction(getnamecallmethod)
+	return c()
+end
+
+SharedRequires["Env"].SecureHelper = function(originalFunc, args)
+	return originalFunc(unpack(args))
+end
+
+SharedRequires["Env"].SecureCall = function(originalFunc, Env, ...) -- i need to add the context changing for secure call
+	local args = { ... }
+
+	if not rawequal(type(originalFunc), "function") then
+		return
+	end
+
+	if not rawequal(type(Env), "instance") then
+		return SharedRequires["Env"].SecureHelper(originalFunc, args)
+	end
+
+	Env = getsenv(Env)
+	setfenv(SharedRequires["Env"].SecureCall, Env)
+
+	local result = SharedRequires["Env"].SecureHelper(originalFunc, args)
+	setfenv(SharedRequires.Env.SecureHelper, {})
+	return result
+end
+
+local Services = SharedRequires["Services"]
+local Maid = SharedRequires["Maid"]
+local LuaEnv = SharedRequires["Env"]
+local croutine = LuaEnv.croutinelib()
+local SecureCall = SharedRequires["Env"].SecureCall
+local loadstr = SharedRequires["Env"].loadstr
+local Pcall = SharedRequires["Env"].Pcall
+local getcallmethod = SharedRequires["Env"].getnamecallmethod
+
+SharedRequires["Bypasses"] = {}
+
+Maid.Setup()
+
+Services.DumpServices()
+
+local Players = Services.GetService("Players")
+local plr = Players.LocalPlayer
+
+local ReplicatedStorage = Services.GetService("ReplicatedStorage")
+local RunService = Services.GetService("RunService")
+local UserInputService = Services.GetService("UserInputService")
+local TweenService = Services.GetService("TweenService")
+local Stats = Services.GetService("Stats")
+local Lighting = Services.GetService("Lighting")
+local Camera = Workspace.CurrentCamera
+local VirtualInputManager = Services.GetService("VirtualInputManager")
+
+
+local SoundService: SoundService = Services.GetService("SoundService")
+local TextService: TextService = Services.GetService("TextService")
+local Teams: Teams = Services.GetService("Teams")
 
 local getgenv = getgenv or function()
     return shared
 end
 local setclipboard = setclipboard or nil
 local protectgui = protectgui or (syn and syn.protect_gui) or function() end
-local gethui = gethui or function() 
-    return ScreenGui 
-end
+local gethui = CoreGui
+
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
 local Labels = {}
 local Buttons = {}
@@ -539,30 +710,30 @@ local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
 end
 
 local function New(ClassName: string, Properties: { [string]: any }): any
-    local instance = Instance.new(ClassName)
+    local Instance = Instance.new(ClassName)
 
     if Templates[ClassName] then
-        FillInstance(Templates[ClassName], instance)
+        FillInstance(Templates[ClassName], Instance)
     end
-    FillInstance(Properties, instance)
+    FillInstance(Properties, Instance)
 
     if Properties["Parent"] and not Properties["ZIndex"] then
         pcall(function()
-            instance.ZIndex = Properties.Parent.ZIndex
+            Instance.ZIndex = Properties.Parent.ZIndex
         end)
     end
 
-    return instance
+    return Instance
 end
 
---// Main Instances
+--// Main Instances \\-
 local function ParentUI(UI: Instance)
-    pcall(protectgui, UI)
+    pcall(protectgui, UI);
 
     if not pcall(function()
             UI.Parent = gethui()
         end) then
-        UI.Parent = LocalPlayer:WaitForChild("PlayerGui", math.huge)
+        UI.Parent = CoreGui
     end
 end
 
@@ -572,15 +743,10 @@ local ScreenGui = New("ScreenGui", {
     ResetOnSpawn = false,
 })
 ParentUI(ScreenGui)
-CustomLib.ScreenGui = ScreenGui
-
-ScreenGui.DescendantRemoving:Connect(function(instance)
-    if CustomLib.RemoveFromRegistry then
-        CustomLib:RemoveFromRegistry(instance)
-    end
-    if CustomLib.DPIRegistry then
-        CustomLib.DPIRegistry[instance] = nil
-    end
+Library.ScreenGui = ScreenGui
+ScreenGui.DescendantRemoving:Connect(function(Instance)
+    Library:RemoveFromRegistry(Instance)
+    Library.DPIRegistry[Instance] = nil
 end)
 
 local ModalElement = New("TextButton", {
@@ -1241,7 +1407,7 @@ function Library:Unload()
 
     Library.Unloaded = true
     ScreenGui:Destroy()
-    genv.Library = nil
+    getgenv().Library = nil
 end
 
 local CheckIcon = Library:GetIcon("check")
@@ -5266,5 +5432,5 @@ Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange))
 Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
 Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
-genv.Library = Library
+getgenv().Library = Library
 return Library
